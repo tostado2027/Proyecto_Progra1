@@ -9,10 +9,12 @@
 
 library(shiny)
 library(ISLR)
+library(readr)
 library(ggplot2)
 
 #Datos
-datos <- ISLR::College
+datos <- read_csv("college_cords.csv")
+#View(datos)
 datos$aceptasa <- (datos$Accept/datos$Apps)*100
 
 # Define UI for application 
