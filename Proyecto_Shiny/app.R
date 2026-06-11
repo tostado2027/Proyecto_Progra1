@@ -11,6 +11,7 @@ library(shiny)
 library(ISLR)
 library(readr)
 library(ggplot2)
+library(tidyverse)
 
 #Datos
 datos <- read_csv("college_cords.csv")
