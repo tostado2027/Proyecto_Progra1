@@ -8,10 +8,11 @@
 #
 
 library(shiny)
+library(tidyverse)
+library(leaflet)
 library(ISLR)
 library(readr)
-library(ggplot2)
-library(tidyverse)
+library(plotly)
 
 #Datos
 datos <- read_csv("college_cords.csv")
