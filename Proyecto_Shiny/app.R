@@ -20,13 +20,18 @@ datos$aceptasa <- (datos$Accept/datos$Apps)*100
 
 # Define UI for application 
 ui <- fluidPage(
-  
   # Application title
   titlePanel("Análisis de Universidades: Selectividad vs Graduación"),
   
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
     sidebarPanel(
+      conditionalPanel(
+        condition = "input.pestanas == 'Análisis de matrícula'",
+        helpText("aquí voy a poner lo mio")
+      ),
+      conditionalPanel(
+        condition = "input.pestanas == 'Selectividad vs Graduación'",
       #activar/desactivar la línea de tendencia
       checkboxInput("mostrar_tendencia", "Mostar línea de tendencia", value = F),
       hr(),
@@ -37,11 +42,18 @@ ui <- fluidPage(
                                "Privadas" = "Yes"),
                    selected = "Todas"),
       br()
+      )
     ),
     
     # Show a plot of the generated distribution
     mainPanel(
-      plotOutput("scatterPlot")
+      tabsetPanel(id = "pestanas",
+        tabPanel("Análisis de matrícula"),
+        tabPanel("Selectividad vs Graduación",
+      plotOutput("scatterPlot")),
+      tabPanel("tercera parte"),
+      tabPanel("cuarta parte")
+      )
     )
   )
 )
