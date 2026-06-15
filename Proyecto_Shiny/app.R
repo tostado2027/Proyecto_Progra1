@@ -232,7 +232,7 @@ output$top10Plot <- renderPlot({
   ggplot(top_10_inst, aes(x = reorder(Nombre_U, Expend), y = Expend, fill = Private)) +
   geom_col(alpha = 0.8) +
   coord_flip() +
-  scale_fill_manul(values = c("No" = "orange", "Yes" = "blue")) +
+  scale_fill_manual(values = c("No" = "orange", "Yes" = "blue")) +
   theme_minimal() +
   labs(title = "Top 10 U. con Mayor Inversión", x = NULL, y = "Gasto por Estudiante (USD)") +
   theme(axis.text.y = element_text(size = 9), plot.title = element_text(face = "bold", size = 11), legend.position = "none")
