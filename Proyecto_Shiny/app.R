@@ -26,10 +26,12 @@ ui <- fluidPage(
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
     sidebarPanel(
+      #Pestaña 1:
       conditionalPanel(
         condition = "input.pestanas == 'Análisis de matrícula'",
         helpText("aquí voy a poner lo mio")
       ),
+      #Pestaña 2:
       conditionalPanel(
         condition = "input.pestanas == 'Selectividad vs Graduación'",
       #activar/desactivar la línea de tendencia
@@ -43,6 +45,29 @@ ui <- fluidPage(
                    selected = "Todas"),
       br()
       ),
+      #Pestaña 3:
+      conditionalPanel(
+        condition = "input.pestanas == 'Análisis espacial del presupuesto'",
+        helpText("Filtrar universidades por inversión económmica institucional"),
+        #Control deslizante:
+        sliderInput(
+          inputId = "rango_expend",
+          label = "Rango de Gasto por Estudiante (USD):",
+          min = 2000,
+          max = 55000,
+          value = c(2000, 55000),
+          step = 500
+        ),
+        radioButtons("tipo_universidad_mapa", "Tipo de Universidad (en Mapa):",
+                  choices = c("Todas" = "Todas",
+                              "Públicas" = "No",
+                              "Privadas" = "Yes"),
+                  selected = "Todas"),
+        hr(),
+        #Mini gráfico
+        plotOutput("top10Plot", height = "300px")
+      ),
+      #Pestaña 4:
       conditionalPanel(
         condition = "input.pestanas == 'Gastos estudiantiles: Alojamiento y personales'",
         helpText("Visualización de los datos estudiantiles según su tipo de universidad"),
@@ -65,7 +90,7 @@ ui <- fluidPage(
           label = "Ver tipo de institución",
           value = TRUE
         )
-    ),
+      )
     
     ),
     
@@ -76,7 +101,9 @@ ui <- fluidPage(
         tabPanel("Selectividad vs Graduación",
       plotOutput("scatterPlot")
       ),
-      tabPanel("tercera parte"),
+      tabPanel("Análisis espacial del presupuesto",
+               leafletOutput("mapa_presupuesto", height = "600px")
+               ),
       tabPanel("Gastos estudiantiles: Alojamiento y personales",
       plotOutput("histocostos")
       )
@@ -157,6 +184,58 @@ p_hist + theme_minimal() +
     x = "Costo estimado en USD",
     y = "Frecuencia"
   )
+})
+
+#Parte Anjer (3):
+datos_mapa_filtrados <- reactive({
+  df <- datos
+  
+  if (input$tipo_universidad_mapa != "Todas") {
+    df <- df %>% filter(Private == input$tipo_universidad_mapa)
+  }
+  
+  df <- df %>% filter(Expend >= input$rango_expend[1] & Expend <= input$rango_expend[2])
+  return(df)
+})
+
+#Mapa:
+output$mapa_presupuesto <- renderLeaflet({
+  df_mapa <- datos_mapa_filtrados()
+  if (nrow(df_mapa) == 0) return(NULL)
+  
+  paleta_colores <- colorFactor(palette = c("orange", "blue"), domain = c("No", "Yes"))
+  
+  leaflet(df_mapa) %>%
+    addTiles() %>%
+    setView(lng = -95.7129, lat = 37.0902, zoom = 4) %>%
+    addCircleMarkers(
+      lng = ~longitude, lat = ~latitude, radius = 5,
+      color = ~paleta_colores(Private), stroke = T, weight = 1, fill = 0.7,
+      popup = ~paste0(
+        "<b>", Nombre_U, "</b><br>",
+        "Tipo: ", ifelse(Private == "Yes", "Privada", "Pública"), "<br>",
+        "Gasto por estudiante: $", Expend, "<br>",
+        "Matrícula externa: $", Outstate, "<br>",
+        "Tasa de Graduación: ", Grad.Rate, "%"
+      )
+    )
+})
+
+#Mini grafico Anjer:
+
+output$top10Plot <- renderPlot({
+  df_top <- datos_mapa_filtrados()
+  if (nrow(df_top) == 0) return(NULL)
+  
+  top_10_inst <- df_top %>% arrange(desc(Expend)) %>% head(10)
+  
+  ggplot(top_10_inst, aes(x = reorder(Nombre_U, Expend), y = Expend, fill = Private)) +
+  geom_col(alpha = 0.8) +
+  coord_flip() +
+  scale_fill_manual(values = c("No" = "orange", "Yes" = "blue")) +
+  theme_minimal() +
+  labs(title = "Top 10 U. con Mayor Inversión", x = NULL, y = "Gasto por Estudiante (USD)") +
+  theme(axis.text.y = element_text(size = 9), plot.title = element_text(face = "bold", size = 11), legend.position = "none")
 })
 }
 
