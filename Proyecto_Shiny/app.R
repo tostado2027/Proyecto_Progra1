@@ -26,10 +26,12 @@ ui <- fluidPage(
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
     sidebarPanel(
+      #Pestaña 1:
       conditionalPanel(
         condition = "input.pestanas == 'Análisis de matrícula'",
         helpText("aquí voy a poner lo mio")
       ),
+      #Pestaña 2:
       conditionalPanel(
         condition = "input.pestanas == 'Selectividad vs Graduación'",
       #activar/desactivar la línea de tendencia
@@ -42,7 +44,54 @@ ui <- fluidPage(
                                "Privadas" = "Yes"),
                    selected = "Todas"),
       br()
+      ),
+      #Pestaña 3:
+      conditionalPanel(
+        condition = "input.pestanas == 'Análisis espacial del presupuesto'",
+        helpText("Filtrar universidades por inversión económmica institucional"),
+        #Control deslizante:
+        sliderInput(
+          inputId = "rango_expend",
+          label = "Rango de Gasto por Estudiante (USD):",
+          min = 2000,
+          max = 55000,
+          value = c(2000, 55000),
+          step = 500
+        ),
+        radioButtons("tipo_universidad_mapa", "Tipo de Universidad (en Mapa):",
+                  choices = c("Todas" = "Todas",
+                              "Públicas" = "No",
+                              "Privadas" = "Yes"),
+                  selected = "Todas"),
+        hr(),
+        #Mini gráfico
+        plotOutput("top10Plot", height = "300px")
+      ),
+      #Pestaña 4:
+      conditionalPanel(
+        condition = "input.pestanas == 'Gastos estudiantiles: Alojamiento y personales'",
+        helpText("Visualización de los datos estudiantiles según su tipo de universidad"),
+        br(),
+        selectInput(
+          inputId = "variable_costos",
+          label = "Seleccione algun tipo de gasto",
+          choices = c("Alojamiento" = "Room.Board", "Gastos personales" = "Personal"),
+          selected = "Room.Board"
+        ),
+        sliderInput(
+          inputId = "bins_costos",
+          label = "Cantidades",
+          min = 5,
+          max = 50,
+          value = 25
+        ),
+        checkboxInput(
+          inputId = "separar_tipo",
+          label = "Ver tipo de institución",
+          value = TRUE
+        )
       )
+    
     ),
     
     # Show a plot of the generated distribution
@@ -50,12 +99,17 @@ ui <- fluidPage(
       tabsetPanel(id = "pestanas",
         tabPanel("Análisis de matrícula"),
         tabPanel("Selectividad vs Graduación",
-      plotOutput("scatterPlot")),
-      tabPanel("tercera parte"),
-      tabPanel("cuarta parte")
+      plotOutput("scatterPlot")
+      ),
+      tabPanel("Análisis espacial del presupuesto",
+               leafletOutput("mapa_presupuesto", height = "600px")
+               ),
+      tabPanel("Gastos estudiantiles: Alojamiento y personales",
+      plotOutput("histocostos")
       )
     )
   )
+)
 )
 
 # Define server logic required to draw a histogram
@@ -73,7 +127,7 @@ server <- function(input, output) {
     p <- ggplot(datos_filtrados, aes(x = aceptasa, y = Grad.Rate))
     
     if(input$tipo_universidad == "Todas"){
-      p <- p + geom_point(color ="steelblue", alpha = 0.6, size = 2) +
+      p <- p + geom_point(color ="slategray2", alpha = 0.6, size = 2) +
         labs(title = "Relación entre Tasa de Aceptación y Tasa de Graduación",
              x = "Tasa de Aceptación (%)",
              y = "Tasa de Graduación (%)")
@@ -86,7 +140,7 @@ server <- function(input, output) {
         color = "Tipo de Universidad"
       ) + 
       scale_colour_manual(
-        values = c("No" = "lightcoral", "Yes" = "palegreen3"),
+        values = c("No" = "coral3", "Yes" = "darkolivegreen2"),
         labels = c("No" = "Pública", "Yes" = "Privada"),
         drop = FALSE
       )}
@@ -99,6 +153,90 @@ server <- function(input, output) {
     #Mostrar el gráfico final
     p
   })
+  
+output$histocostos <- renderPlot({
+p_hist <- ggplot(datos, aes(x = .data[[input$variable_costos]]))
+
+if (input$separar_tipo){
+  p_hist <- p_hist + geom_histogram(
+    aes(fill = Private),
+    bins = input$bins_costos,
+    alpha = 0.6,
+    position = "identity"
+  ) + 
+    scale_fill_manual(
+      values = c("No" = "coral3", "Yes" = "darkolivegreen2"),
+      labels = c("No" = "Público", "Yes" = "Privado")
+    ) + 
+    labs(fill = "Tipo de Universidad")
+} else {
+  p_hist <- p_hist + geom_histogram(
+    bins = input$bins_costos,
+    fill = "slategray2",
+    color = "snow2",
+    alpha = 0.8
+  )
+}
+  
+p_hist + theme_minimal() +
+  labs(
+    title = paste("Distribución de gastos en", ifelse(input$variable_costos == "Room.Board", "Alojamiento", "Gastos personales")),
+    x = "Costo estimado en USD",
+    y = "Frecuencia"
+  )
+})
+
+#Parte Anjer (3):
+datos_mapa_filtrados <- reactive({
+  df <- datos
+  
+  if (input$tipo_universidad_mapa != "Todas") {
+    df <- df %>% filter(Private == input$tipo_universidad_mapa)
+  }
+  
+  df <- df %>% filter(Expend >= input$rango_expend[1] & Expend <= input$rango_expend[2])
+  return(df)
+})
+
+#Mapa:
+output$mapa_presupuesto <- renderLeaflet({
+  df_mapa <- datos_mapa_filtrados()
+  if (nrow(df_mapa) == 0) return(NULL)
+  
+  paleta_colores <- colorFactor(palette = c("orange", "blue"), domain = c("No", "Yes"))
+  
+  leaflet(df_mapa) %>%
+    addTiles() %>%
+    setView(lng = -95.7129, lat = 37.0902, zoom = 4) %>%
+    addCircleMarkers(
+      lng = ~longitude, lat = ~latitude, radius = 5,
+      color = ~paleta_colores(Private), stroke = T, weight = 1, fill = 0.7,
+      popup = ~paste0(
+        "<b>", Nombre_U, "</b><br>",
+        "Tipo: ", ifelse(Private == "Yes", "Privada", "Pública"), "<br>",
+        "Gasto por estudiante: $", Expend, "<br>",
+        "Matrícula externa: $", Outstate, "<br>",
+        "Tasa de Graduación: ", Grad.Rate, "%"
+      )
+    )
+})
+
+#Mini grafico Anjer:
+
+output$top10Plot <- renderPlot({
+  df_top <- datos_mapa_filtrados()
+  if (nrow(df_top) == 0) return(NULL)
+  
+  top_10_inst <- df_top %>% arrange(desc(Expend)) %>% head(10)
+  
+  ggplot(top_10_inst, aes(x = reorder(Nombre_U, Expend), y = Expend, fill = Private)) +
+  geom_col(alpha = 0.8) +
+  coord_flip() +
+  scale_fill_manual(values = c("No" = "orange", "Yes" = "blue")) +
+  theme_minimal() +
+  labs(title = "Top 10 U. con Mayor Inversión", x = NULL, y = "Gasto por Estudiante (USD)") +
+  theme(axis.text.y = element_text(size = 9), plot.title = element_text(face = "bold", size = 11), legend.position = "none")
+})
 }
 
 # Run the application 
