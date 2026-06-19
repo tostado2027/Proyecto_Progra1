@@ -127,7 +127,7 @@ server <- function(input, output) {
     p <- ggplot(datos_filtrados, aes(x = aceptasa, y = Grad.Rate))
     
     if(input$tipo_universidad == "Todas"){
-      p <- p + geom_point(color ="slategray2", alpha = 0.6, size = 2) +
+      p <- p + geom_point(color ="#6959CD", alpha = 0.6, size = 2) +
         labs(title = "Relación entre Tasa de Aceptación y Tasa de Graduación",
              x = "Tasa de Aceptación (%)",
              y = "Tasa de Graduación (%)")
@@ -140,7 +140,7 @@ server <- function(input, output) {
         color = "Tipo de Universidad"
       ) + 
       scale_colour_manual(
-        values = c("No" = "coral3", "Yes" = "darkolivegreen2"),
+        values = c("No" = "coral3", "Yes" = "#7CCD7C"),
         labels = c("No" = "Pública", "Yes" = "Privada"),
         drop = FALSE
       )}
@@ -165,14 +165,14 @@ if (input$separar_tipo){
     position = "identity"
   ) + 
     scale_fill_manual(
-      values = c("No" = "coral3", "Yes" = "darkolivegreen2"),
+      values = c("No" = "coral3", "Yes" = "#7CCD7C"),
       labels = c("No" = "Público", "Yes" = "Privado")
     ) + 
     labs(fill = "Tipo de Universidad")
 } else {
   p_hist <- p_hist + geom_histogram(
     bins = input$bins_costos,
-    fill = "slategray2",
+    fill = "#6959CD",
     color = "snow2",
     alpha = 0.8
   )
@@ -203,7 +203,7 @@ output$mapa_presupuesto <- renderLeaflet({
   df_mapa <- datos_mapa_filtrados()
   if (nrow(df_mapa) == 0) return(NULL)
   
-  paleta_colores <- colorFactor(palette = c("orange", "blue"), domain = c("No", "Yes"))
+  paleta_colores <- colorFactor(palette = if(input$tipo_universidad_mapa == "Todas") c("#6959CD", "#6959CD") else c("coral3", "#7CCD7C"), domain = c("No", "Yes"))
   
   leaflet(df_mapa) %>%
     addTiles() %>%
@@ -232,7 +232,7 @@ output$top10Plot <- renderPlot({
   ggplot(top_10_inst, aes(x = reorder(Nombre_U, Expend), y = Expend, fill = Private)) +
   geom_col(alpha = 0.8) +
   coord_flip() +
-  scale_fill_manual(values = c("No" = "orange", "Yes" = "blue")) +
+  scale_fill_manual(values = if(input$tipo_universidad_mapa == "Todas") c("No" = "#6959CD", "Yes" = "#6959CD") else c("No" = "coral3", "Yes" = "#7CCD7C")) +
   theme_minimal() +
   labs(title = "Top 10 U. con Mayor Inversión", x = NULL, y = "Gasto por Estudiante (USD)") +
   theme(axis.text.y = element_text(size = 9), plot.title = element_text(face = "bold", size = 11), legend.position = "none")
