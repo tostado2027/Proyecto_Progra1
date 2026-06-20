@@ -29,8 +29,12 @@ ui <- fluidPage(
       #Pestaña 1:
       conditionalPanel(
         condition = "input.pestanas == 'Análisis de matrícula'",
-        helpText("aquí voy a poner lo mio")
-      ),
+        checkboxGroupInput("filtro_tipo","Tipo de Universidad",
+                           choices = c("Pública","Privada"),selected = c("Pública","Privada")),
+        sliderInput("filtro_matricula","Rango de matrícula ($)",
+                    min = min(datos$Outstate), max = max(datos$Outstate),
+                    value = c(min(datos$Outstate),max(datos$Outstate))
+      )),
       #Pestaña 2:
       conditionalPanel(
         condition = "input.pestanas == 'Selectividad vs Graduación'",
@@ -94,10 +98,13 @@ ui <- fluidPage(
     
     ),
     
-    # Show a plot of the generated distribution
+  
     mainPanel(
       tabsetPanel(id = "pestanas",
-        tabPanel("Análisis de matrícula"),
+        tabPanel("Análisis de matrícula",
+                checkboxInput("ver_puntos","Mostrar puntos individuales por universidad"),
+                plotOutput("box_matrícula")
+                 ),
         tabPanel("Selectividad vs Graduación",
       plotOutput("scatterPlot")
       ),
@@ -112,12 +119,49 @@ ui <- fluidPage(
 )
 )
 
+
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-  
+  output$box_matrícula <- renderPlot({
+    
+    # primero filtramos los datos para que se pueda hacer el boxplot de manera correcta
+    tipos_seleccionados <- c()
+    if ("Pública" %in% input$filtro_tipo) 
+      tipos_seleccionados <- c(tipos_seleccionados, "No")
+    if ("Privada" %in% input$filtro_tipo) 
+      tipos_seleccionados <- c(tipos_seleccionados, "Yes")
+    
+    datos_filtrados_p1 <- datos %>% 
+      filter(Private %in% tipos_seleccionados) %>% 
+      filter(Outstate >= input$filtro_matricula[1] & Outstate <= input$filtro_matricula[2])
+    
+   # Grafiquito del boxplot
+    boxplot <- ggplot(datos_filtrados_p1, aes(x = Private, y = Outstate, fill = Private)) +
+      geom_boxplot(alpha = 0.7,outliers = F) +
+      scale_x_discrete(labels = c("No" = "Pública", "Yes" = "Privada")) +
+      scale_fill_manual(values = c("No" = "coral3", "Yes" = "#7CCD7C"), 
+                        labels = c("No" = "Pública", "Yes" = "Privada")) +
+      theme_minimal() +
+      labs(
+        title = "Distribución del Costo de Matrícula Externa",
+        x = "Tipo de Institución",
+        y = "Costo de Matrícula (USD)",
+        fill = "Tipo"
+      ) +
+      theme(plot.title = element_text(face = "bold", size = 14))
+    
+    # Agregar los puntos inidivuduales de la dispersión
+    if (input$ver_puntos) {
+      boxplot <- boxplot + geom_jitter(width = 0.2, alpha = 0.4, color = "#6959CD", size = 1.2)
+    }
+    
+    #acá se muestra al final el gráfico
+    boxplot
+  })
   output$scatterPlot <- renderPlot({
     
     #Filtar los datos según la seleción
+    
     datos_filtrados <- datos
     if(input$tipo_universidad != "Todas"){
       datos_filtrados <- datos %>% filter(Private == input$tipo_universidad)
