@@ -16,6 +16,7 @@ library(plotly)
 
 #Datos
 datos <- read_csv("college_cords.csv")
+datos <- datos %>% filter(Grad.Rate <= 100)
 datos$aceptasa <- (datos$Accept/datos$Apps)*100
 
 # Define UI for application 
