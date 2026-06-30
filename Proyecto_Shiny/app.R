@@ -185,11 +185,15 @@ server <- function(input, output) {
     if ("Privada" %in% input$filtro_tipo) 
       tipos_seleccionados <- c(tipos_seleccionados, "Yes")
     
+    #Se filtra la base de datos según las opciones seleccionadas por el que use la spp
+    #(tipo de institución y rango de matrícula), de modo que el gráfico solo utilice 
+    #la información importante para esta pestaña.
     datos_filtrados_p1 <- datos %>% 
       filter(Private %in% tipos_seleccionados) %>% 
       filter(Outstate >= input$filtro_matricula[1] & Outstate <= input$filtro_matricula[2])
     
-   # Grafiquito del boxplot
+   # Grafiquito del boxplot, con la función ggplot se hizo un gráfico boxplot simple
+    #con todos sus componentes
     boxplot <- ggplot(datos_filtrados_p1, aes(x = Private, y = Outstate, fill = Private)) +
       geom_boxplot(alpha = 0.7,outliers = F) +
       scale_x_discrete(labels = c("No" = "Pública", "Yes" = "Privada")) +
