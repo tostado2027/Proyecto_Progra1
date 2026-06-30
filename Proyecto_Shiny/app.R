@@ -22,11 +22,11 @@ datos$aceptasa <- (datos$Accept/datos$Apps)*100
 
 # Define UI for application 
 ui <- fluidPage(
-  #Agregar tema a la aplicación
+  #Agregando un tema para la aplicación
   theme =  bs_theme(
     bg = "#1C1B2E",        # Fondo oscuro con tono violeta
     fg = "#E8E6F0",        # Texto claro con tinte violeta suave
-    primary = "#6959CD",   # Tu mismo púrpura del código
+    primary = "#6959CD",   # Púrpura del código
     secondary = "#7CCD7C", # Tu mismo verde de privadas
     danger = "#CD5C5C",    # Tono equivalente a coral3
     success = "#7CCD7C",   # Verde consistente
@@ -52,10 +52,10 @@ ui <- fluidPage(
   
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
-    sidebarPanel(
+    sidebarPanel(#el sidebarpanel crea un panel lateral en la zona izquierda, ya sea para escribir o para agregar botones,sliders etc.
       #Pestaña 1:
-      conditionalPanel(
-        condition = "input.pestanas == 'Análisis de matrícula'",
+      conditionalPanel(#El conditional panel sirve especificamente para que cada pestaña de la app tenga un sidebarpanel distinto
+        condition = "input.pestanas == 'Análisis de matrícula'",#acá se crea un id que va a ir relacionado al main panel para que identifique en cual pestaña va esta información
         checkboxGroupInput("filtro_tipo","Tipo de Universidad",
                            choices = c("Pública","Privada"),selected = c("Pública","Privada")),
         sliderInput("filtro_matricula","Rango de matrícula ($)",
