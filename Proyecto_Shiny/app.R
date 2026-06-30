@@ -81,12 +81,17 @@ ui <- fluidPage(
                     value = c(min(datos$Outstate),max(datos$Outstate)) 
                   
       )),
+      
       #Pestaña 2:
+      #El condicionalPanel se usa para asegurar que los controles de selectividad solo 
+      #aparezcan cuando el usuario interactúe con tu pestaña.
       conditionalPanel(
         condition = "input.pestanas == 'Relación entre Tasa de aceptación y Tasa de Graduación'",
+        
       #activar/desactivar la línea de tendencia
       checkboxInput("mostrar_tendencia", "Mostar línea de tendencia", value = F),
       hr(),
+      
       #Control 2: Para selecionar el tipo de universidad
       radioButtons("tipo_universidad", "Tipo de Universidad a mostrar:",
                    choices = c("Todas" = "Todas",
@@ -95,6 +100,7 @@ ui <- fluidPage(
                    selected = "Todas"),
       br()
       ),
+      
       #Pestaña 3:
       conditionalPanel(
         condition = "input.pestanas == 'Análisis espacial del presupuesto'",
@@ -198,7 +204,7 @@ server <- function(input, output) {
       ) +
       theme(plot.title = element_text(face = "bold", size = 14))
     
-    # Agregar los puntos inidivuduales de la dispersión
+    #Agregar los puntos inidivuduales de la dispersión
     if (input$ver_puntos) {
       boxplot <- boxplot + geom_jitter(width = 0.2, alpha = 0.4, color = "#6959CD", size = 1.2)
     }
