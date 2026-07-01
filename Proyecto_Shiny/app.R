@@ -255,6 +255,7 @@ server <- function(input, output) {
     p
   })
   
+#Prueba, parte pregunta 4  
 output$histocostos <- renderPlot({
 p_hist <- ggplot(datos, aes(x = .data[[input$variable_costos]]))
 
