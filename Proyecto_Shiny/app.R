@@ -223,20 +223,34 @@ server <- function(input, output) {
   output$scatterPlot <- renderPlot({
     
     #Filtar los datos según la selección
+    #Se crea una copia de la base de datos original para no modificar los datos originales
     datos_filtrados <- datos
+    
+    #Si el usuario selecciona algo distinto a "Todas",
+    #se filtran los datos para mostrar solo ese tipo de universidad (Privada o Pública).
     if(input$tipo_universidad != "Todas"){
       datos_filtrados <- datos %>% filter(Private == input$tipo_universidad)
     }
     
     #Gráfico de disperción 
+    # Se inicia el gráfico usando los datos filtrados.
+    #Y se define el eje X (tasa de aceptación) y el eje Y (tasa de graduación).
     p <- ggplot(datos_filtrados, aes(x = aceptasa, y = Grad.Rate))
     
+    #Caso 1: Si se seleciona la opción todas
     if(input$tipo_universidad == "Todas"){
+      
+      #Se pintan todos los puntos de color morado
+      #alpha = 0.6 da una ligera transparencia para ver puntos superpuestos.
       p <- p + geom_point(color ="#6959CD", alpha = 0.6, size = 2) +
         labs(title = "Relación entre Tasa de Aceptación y Tasa de Graduación",
              x = "Tasa de Aceptación (%)",
              y = "Tasa de Graduación (%)")
+      
+      #Caso 2: si se selecciona un tipo especifico de universidad
     } else {
+      
+      #El color de los puntos dependerá de la variable private
       p <- p + geom_point(aes(color = Private),alpha = 0.8, size = 2)+
       labs( 
         title = "Relación entre Tasa de Aceptación y Tasa de Graduación",
@@ -244,15 +258,21 @@ server <- function(input, output) {
         y = "Tasa de Gradución (%)",
         color = "Tipo de Universidad"
       ) + 
+      #Se asignan colores dependiendo si es privada o pública y etiquetas 
       scale_colour_manual(
         values = c("No" = "#FF6B6B", "Yes" = "#56E39F"),
         labels = c("No" = "Pública", "Yes" = "Privada"),
         drop = FALSE
       )}
-      theme_minimal()
+    p <- p + theme_minimal()
       
     #Condición para la línea de tendencia
+    #Se agrega la opción de poner linea de tendendia 
     if(input$mostrar_tendencia){
+      
+      #Se añade una línea de regresión lineal (method = "lm") de color rojo.
+      #aes(group = 1) asegura que se dibuje una sola línea general para todos los puntos.
+      #se = FALSE oculta la banda del intervalo de confianza.
       p <- p + geom_smooth(aes(group = 1),method = "lm", color = "red", se = FALSE, size = 1.2)
     }
     #Muestra el gráfico final
