@@ -264,7 +264,7 @@ output$histocostos <- renderPlot({
 p_hist <- ggplot(datos, aes(x = .data[[input$variable_costos]]))
 
 if (input$separar_tipo){ #Mi parte favorita del código. Acá, estamos completando la parte lógica de la interactiva arriba
-  p_hist <- p_hist + geom_histogram( #Porque se define cómo se van a ver los "bins"/cajas etc según lo que se escoja
+  p_hist <- p_hist + geom_histogram( #Porque se define cómo se van a ver los "bins" segun lo que se escoja
     aes(fill = Private),
     bins = input$bins_costos,
     alpha = 0.6, #Recordatorio: Esto define transparencia
