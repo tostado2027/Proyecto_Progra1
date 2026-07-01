@@ -259,7 +259,7 @@ server <- function(input, output) {
     p
   })
   
-#Parte pregunta 4 gráfico del histograma. Primero, hacer un histograma con ggplot de toda la vida.   
+#Pregunta 4 gráfico del histograma. Primero, hacer un histograma con ggplot de toda la vida.   
 output$histocostos <- renderPlot({
 p_hist <- ggplot(datos, aes(x = .data[[input$variable_costos]]))
 
