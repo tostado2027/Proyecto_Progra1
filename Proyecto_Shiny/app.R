@@ -123,31 +123,35 @@ ui <- fluidPage(
         #Mini gráfico
         plotOutput("top10Plot", height = "300px")
       ),
-      #Pestaña 4:
+      #Pestaña 4: Igual que los demás, esta parte es para que se aprecien los botones
+      #interactivos del histograma.
       conditionalPanel(
         condition = "input.pestanas == 'Gastos estudiantiles: Alojamiento y personales'",
         helpText("Visualización de los datos estudiantiles según su tipo de universidad"),
         br(),
-        selectInput(
+        selectInput( #Este es el separador de gráficos, que es ver por separado los gastos de alojamiento y de personales.
           inputId = "variable_costos",
           label = "Seleccione algun tipo de gasto",
           choices = c("Alojamiento" = "Room.Board", "Gastos personales" = "Personal"),
           selected = "Room.Board"
         ),
-        sliderInput(
-          inputId = "bins_costos",
+        sliderInput( #Seleccionar la escala de cajas que se deseen ver. Parecía importante para ver con mejor
+          inputId = "bins_costos", #detalle las cantidades que el usuario quisiese ver. 
           label = "Cantidades",
           min = 5,
           max = 50,
           value = 25
         ),
-        checkboxInput(
+        checkboxInput( #Y por último, esto para separar entre privadas y públicas.
           inputId = "separar_tipo",
           label = "Ver tipo de institución",
-          value = TRUE
+          value = TRUE 
+          
+          #Todo este pedacito es para partir en tres la parte interactiva: la separación de los gráficos alojamiento
+          #y gastos personales, luego el de mantener una escala (cajitas del hist) y la separación de las instituciones,
+          #por eso es que también se puede ver sin la separación de privadas y públicas.
         )
       )
-    
     ),
     
   
@@ -255,15 +259,15 @@ server <- function(input, output) {
     p
   })
   
-#Prueba, parte pregunta 4  
+#Parte pregunta 4 gráfico del histograma. Primero, hacer un histograma con ggplot de toda la vida.   
 output$histocostos <- renderPlot({
 p_hist <- ggplot(datos, aes(x = .data[[input$variable_costos]]))
 
-if (input$separar_tipo){
-  p_hist <- p_hist + geom_histogram(
+if (input$separar_tipo){ #Mi parte favorita del código. Acá, estamos completando la parte lógica de la interactiva arriba
+  p_hist <- p_hist + geom_histogram( #Porque se define cómo se van a ver los "bins"/cajas etc según lo que se escoja
     aes(fill = Private),
     bins = input$bins_costos,
-    alpha = 0.6,
+    alpha = 0.6, #Recordatorio: Esto define transparencia
     position = "identity"
   ) + 
     scale_fill_manual(
@@ -271,7 +275,7 @@ if (input$separar_tipo){
       labels = c("No" = "Público", "Yes" = "Privado")
     ) + 
     labs(fill = "Tipo de Universidad")
-} else {
+} else { #Este bloquecito es para el general, para ver el histograma que no divide por universidades
   p_hist <- p_hist + geom_histogram(
     bins = input$bins_costos,
     fill = "#6959CD",
@@ -280,7 +284,7 @@ if (input$separar_tipo){
   )
 }
   
-p_hist + theme_minimal() +
+p_hist + theme_minimal() + #Parte estética, para que el título cambie segun la elección del usuario.
   labs(
     title = paste("Distribución de gastos en", ifelse(input$variable_costos == "Room.Board", "Alojamiento", "Gastos personales")),
     x = "Costo estimado en USD",
