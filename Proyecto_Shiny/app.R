@@ -101,11 +101,15 @@ ui <- fluidPage(
       br()
       ),
       
-      #Pestaña 3:
-      conditionalPanel(
+      #Pestaña 3: Análisis Espacial (Parte Anjerson)
+      
+      # Panel condicional exclusivo para la exploración del presupuesto institucional (Expend).
+      # Se utilizan controles interactivos para segmentar la base de datos antes de mapearla.
+       conditionalPanel(
         condition = "input.pestanas == 'Análisis espacial del presupuesto'",
         helpText("Filtrar universidades por inversión económmica institucional"),
-        #Control deslizante:
+        
+        # Filtro numérico continuo para acotar el análisis a rangos de gasto específicos
         sliderInput(
           inputId = "rango_expend",
           label = "Rango de Gasto por Estudiante (USD):",
@@ -114,13 +118,16 @@ ui <- fluidPage(
           value = c(2000, 55000),
           step = 500
         ),
+        
+        # Filtro por categorías independiente para el mapa
         radioButtons("tipo_universidad_mapa", "Tipo de Universidad (en Mapa):",
                   choices = c("Todas" = "Todas",
                               "Públicas" = "No",
                               "Privadas" = "Yes"),
                   selected = "Todas"),
         hr(),
-        #Mini gráfico
+        
+        # Aquí va el gráfico dinámico complementario al mapa
         plotOutput("top10Plot", height = "300px")
       ),
       #Pestaña 4: Igual que los demás, esta parte es para que se aprecien los botones
@@ -292,23 +299,35 @@ p_hist + theme_minimal() + #Parte estética, para que el título cambie segun la
   )
 })
 
-#Parte Anjer (3):
+#Lógica de la parte Anjer (3):
+
+
+# 1. Objeto Central
+# Filtrado para esta pestaña. Intercepta los inputs
+# del usuario y actualiza simultáneamente el mapa y el gráfico de barras.
 datos_mapa_filtrados <- reactive({
   df <- datos
   
+  # Aplicación del filtro por categoría (Pública vs Privada)
   if (input$tipo_universidad_mapa != "Todas") {
     df <- df %>% filter(Private == input$tipo_universidad_mapa)
   }
   
+  # Aplicación del filtro numérico por rango de inversión por estudiante
   df <- df %>% filter(Expend >= input$rango_expend[1] & Expend <= input$rango_expend[2])
   return(df)
 })
 
-#Mapa:
+# 2. Renderizado del Mapa Interactivo (Leaflet)
+# Evalúa la distribución espacial del presupuesto universitario a lo largo de USA.
 output$mapa_presupuesto <- renderLeaflet({
   df_mapa <- datos_mapa_filtrados()
+  
+  # Control de excepciones: evita que la app colapse si los filtros dejan el dataframe vacío
   if (nrow(df_mapa) == 0) return(NULL)
   
+# Paleta condicional: Unifica colores si se ven "Todas", o aplica colores 
+# institucionales si se segmenta por tipo, manteniendo la coherencia visual del tema.
   paleta_colores <- colorFactor(palette = if(input$tipo_universidad_mapa == "Todas") c("#6959CD", "#6959CD") else c("#FF6B6B", "#56E39F"), domain = c("No", "Yes"))
   
   leaflet(df_mapa) %>%
@@ -317,7 +336,9 @@ output$mapa_presupuesto <- renderLeaflet({
     addCircleMarkers(
       lng = ~longitude, lat = ~latitude, radius = 5,
       color = ~paleta_colores(Private), stroke = T, weight = 1, fill = 0.7,
-      popup = ~paste0(
+     
+# Ventana emergente con el resumen de estadísticos descriptivos para cada punto
+       popup = ~paste0(
         "<b>", Nombre_U, "</b><br>",
         "Tipo: ", ifelse(Private == "Yes", "Privada", "Pública"), "<br>",
         "Gasto por estudiante: $", Expend, "<br>",
@@ -327,14 +348,16 @@ output$mapa_presupuesto <- renderLeaflet({
     )
 })
 
-#Mini grafico Anjer:
-
+# 3. Gráfico de Jerarquías (Top 10)
+# Complemento cuantitativo al mapa para identificar fácilmente los valores extremos superiores
 output$top10Plot <- renderPlot({
   df_top <- datos_mapa_filtrados()
   if (nrow(df_top) == 0) return(NULL)
   
+  # Se aíslan y ordenan las 10 observaciones con mayor magnitud de gasto
   top_10_inst <- df_top %>% arrange(desc(Expend)) %>% head(10)
   
+  # Se utiliza coord_flip() y reorder() para garantizar la legibilidad de los nombres
   ggplot(top_10_inst, aes(x = reorder(Nombre_U, Expend), y = Expend, fill = Private)) +
   geom_col(alpha = 0.8) +
   coord_flip() +
